@@ -1,0 +1,77 @@
+name: Monorepo CI
+
+on:
+  pull_request:
+    branches:
+      - "main"
+
+env:
+  NODE_VERSION: 22.11.0
+  TEST_ENV_COMMAND: setup_test_env
+  BUILD_COMMAND: build
+  START_SERVER_COMMAND: start_ci_server
+  UNIT_TEST_COMMAND: unit_test
+  PREPARE_E2E_COMMAND: prepare_e2e
+  E2E_TEST_COMMAND: e2e_test
+  PR_NAME: ${{ github.event.pull_request.title }}
+  SCOPES: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Initialize build scopes
+      run: |       
+        bash build_scripts/initialize-build-scopes.sh
+
+    - name: Validate build scopes
+      run: |       
+        bash build_scripts/validate-scopes.sh
+
+    - name: Make multiple pnpm workspace command
+      run: |     
+        bash build_scripts/pnpm-multiple-command.sh
+ 
+    - uses: pnpm/action-setup@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'pnpm'
+
+    - name: pnpm library install
+      run: |
+        pnpm install
+
+    - name: Initialize test environment variables
+      run: |
+        echo "${MULTIPLE_COMMAND} ${TEST_ENV_COMMAND}"
+        eval "${MULTIPLE_COMMAND} ${TEST_ENV_COMMAND}"
+
+    - name: Build Application
+      run: |
+        echo "${MULTIPLE_COMMAND} ${BUILD_COMMAND}"
+        eval "${MULTIPLE_COMMAND} ${BUILD_COMMAND}"
+
+    - name: Start server
+      run: |
+        echo "${MULTIPLE_COMMAND} ${START_SERVER_COMMAND}" 
+        eval "${MULTIPLE_COMMAND} ${START_SERVER_COMMAND}"
+        
+    - name: unit test
+      run: |
+        echo "${MULTIPLE_COMMAND} ${UNIT_TEST_COMMAND}"
+        eval "${MULTIPLE_COMMAND} ${UNIT_TEST_COMMAND}"
+ 
+    - name: Prepare e2e
+      run: |
+        echo "${MULTIPLE_COMMAND} ${PREPARE_E2E_COMMAND}" 
+        eval "${MULTIPLE_COMMAND} ${PREPARE_E2E_COMMAND}"
+
+    - name: e2e test
+      run: |
+        echo "${MULTIPLE_COMMAND} ${E2E_TEST_COMMAND}"
+        eval "${MULTIPLE_COMMAND} ${E2E_TEST_COMMAND}"
